@@ -112,6 +112,37 @@
     </select>
     <button onclick="startGame()">Start Game</button>
     <button onclick="changeColor()">🎨 Change Disk Colors</button>
+    <!-- Keep the existing <html>, <head>, and styles from previous code -->
+<!-- Add this inside <body>, right before <div class="controls"> -->
+
+<button onclick="showHelp()" style="margin: 10px; padding: 8px 16px; font-size: 16px;">❓ How to Play</button>
+
+<!-- Existing controls/game/stats go here -->
+
+<!-- Add this at the bottom of <body> -->
+<div id="helpModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000a; z-index:1000; align-items:center; justify-content:center;">
+  <div style="background:#fff; color:#000; max-width:400px; padding:20px; border-radius:10px; text-align:left;">
+    <h2>🧠 How to Play</h2>
+    <ol>
+      <li>Select the number of disks.</li>
+      <li>Drag and drop disks to another tower.</li>
+      <li>You can only move one disk at a time.</li>
+      <li>A larger disk can't go on a smaller one.</li>
+      <li>Move all disks to another tower to win!</li>
+    </ol>
+    <button onclick="hideHelp()" style="margin-top:10px; padding:5px 10px;">Close</button>
+  </div>
+</div>
+
+<script>
+  function showHelp() {
+    document.getElementById("helpModal").style.display = "flex";
+  }
+  function hideHelp() {
+    document.getElementById("helpModal").style.display = "none";
+  }
+</script>
+
   </div>
 
   <div class="stats">
