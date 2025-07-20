@@ -57,7 +57,6 @@
     .disk {
       position: absolute;
       height: 20px;
-      background: #61dafb;
       border-radius: 5px;
       cursor: grab;
       touch-action: none;
@@ -88,6 +87,7 @@
       <option value="6">6</option>
     </select>
     <button onclick="startGame()">Start Game</button>
+    <button onclick="changeDiskColors()">Change Disk Color</button>
   </div>
   <div class="stats">
     <span>Moves: <span id="moveCount">0</span></span> |
@@ -96,18 +96,9 @@
   <div id="winner"></div>
 
   <div class="game" id="game">
-    <div class="tower" id="tower1">
-      <div class="peg"></div>
-      <div class="base"></div>
-    </div>
-    <div class="tower" id="tower2">
-      <div class="peg"></div>
-      <div class="base"></div>
-    </div>
-    <div class="tower" id="tower3">
-      <div class="peg"></div>
-      <div class="base"></div>
-    </div>
+    <div class="tower" id="tower1"><div class="peg"></div><div class="base"></div></div>
+    <div class="tower" id="tower2"><div class="peg"></div><div class="base"></div></div>
+    <div class="tower" id="tower3"><div class="peg"></div><div class="base"></div></div>
   </div>
 
   <div class="bests" id="bestTimes">
@@ -121,7 +112,13 @@
   <script>
     let selectedDisk = null, offsetX = 0, offsetY = 0;
     let moveCount = 0, timer = 0, timerInterval;
+    let colorSetIndex = 0;
     const towers = [...document.querySelectorAll(".tower")];
+    const colorSets = [
+      ["#f94144", "#f3722c", "#f8961e", "#f9c74f", "#90be6d", "#43aa8b"],
+      ["#577590", "#4d908e", "#277da1", "#8ecae6", "#219ebc", "#023047"],
+      ["#a29bfe", "#81ecec", "#fab1a0", "#ffeaa7", "#74b9ff", "#55efc4"]
+    ];
 
     function startGame() {
       clearInterval(timerInterval);
@@ -132,6 +129,7 @@
       document.getElementById("moveCount").textContent = moveCount;
 
       const count = +document.getElementById("diskCount").value;
+      const screenRatio = Math.min(window.innerWidth / 500, 1); // scale for small screens
       towers.forEach(t => {
         const peg = t.querySelector(".peg");
         const base = t.querySelector(".base");
@@ -144,10 +142,12 @@
         const disk = document.createElement("div");
         disk.className = "disk";
         disk.dataset.size = i;
-        disk.style.width = `${20 + i * 20}px`;
-        disk.style.left = `calc(50% - ${10 + i * 10}px)`;
+
+        const diskWidth = (20 + i * 20) * screenRatio;
+        disk.style.width = `${diskWidth}px`;
+        disk.style.left = `calc(50% - ${diskWidth / 2}px)`;
         disk.style.bottom = `${(count - i) * 22}px`;
-        disk.style.background = `hsl(${i * 50}, 80%, 60%)`;
+        disk.style.background = colorSets[colorSetIndex % colorSets.length][(i - 1) % 6];
 
         addDragEvents(disk);
         towers[0].appendChild(disk);
@@ -199,7 +199,6 @@
             targetTower.appendChild(selectedDisk);
             moveCount++;
             document.getElementById("moveCount").textContent = moveCount;
-
             checkWin();
           } else {
             resetDisk(selectedDisk);
@@ -244,6 +243,11 @@
         const val = localStorage.getItem(`hanoi_best_${i}`);
         document.getElementById("best" + i).textContent = val || "--";
       }
+    }
+
+    function changeDiskColors() {
+      colorSetIndex = (colorSetIndex + 1) % colorSets.length;
+      startGame();
     }
 
     document.getElementById("diskCount").addEventListener("change", updateBestTimes);
