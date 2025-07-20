@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Tower of Hanoi</title>
   <style>
+    :root {
+      --colors: hsl(210, 80%, 60%), hsl(150, 80%, 60%), hsl(50, 80%, 60%), hsl(0, 80%, 70%), hsl(300, 80%, 70%), hsl(30, 90%, 60%);
+    }
+
     body {
       margin: 0;
       font-family: Arial, sans-serif;
@@ -12,40 +16,49 @@
       color: white;
       text-align: center;
     }
-    h1 { margin-top: 10px; }
+
+    h1 { margin: 10px; }
+
     .controls, .stats, .bests {
       margin: 10px;
     }
+
     select, button {
       padding: 6px 12px;
       font-size: 16px;
+      margin: 5px;
     }
+
     .game {
       display: flex;
       justify-content: center;
       align-items: flex-end;
-      height: 60vh;
-      margin: 20px 10px;
-      gap: 20px;
+      height: 65vh;
+      margin: 10px;
+      gap: 10px;
       touch-action: none;
     }
+
     .tower {
       background: #444;
-      width: 120px;
+      width: 28vw;
+      max-width: 120px;
       height: 100%;
       position: relative;
       border-radius: 10px 10px 0 0;
     }
+
     .peg {
       position: absolute;
       bottom: 10px;
       width: 10px;
-      height: 85%;
+      height: 92%;
       background: #ccc;
       left: 50%;
       transform: translateX(-50%);
       border-radius: 5px;
     }
+
     .base {
       position: absolute;
       bottom: 0;
@@ -54,22 +67,32 @@
       background: #666;
       border-radius: 0 0 10px 10px;
     }
+
     .disk {
       position: absolute;
-      height: 20px;
+      height: 5vh;
+      min-height: 20px;
+      text-align: center;
+      line-height: 5vh;
+      font-weight: bold;
+      color: #000;
+      background: #61dafb;
       border-radius: 5px;
       cursor: grab;
       touch-action: none;
     }
+
     .disk.dragging {
       opacity: 0.6;
       z-index: 10;
     }
+
     #winner {
       font-size: 1.5em;
       color: lightgreen;
       margin: 10px;
     }
+
     .bests {
       font-size: 15px;
       margin-top: 20px;
@@ -78,6 +101,7 @@
 </head>
 <body>
   <h1>🏗️ Tower of Hanoi</h1>
+
   <div class="controls">
     Disks:
     <select id="diskCount">
@@ -87,12 +111,14 @@
       <option value="6">6</option>
     </select>
     <button onclick="startGame()">Start Game</button>
-    <button onclick="changeDiskColors()">Change Disk Color</button>
+    <button onclick="changeColor()">🎨 Change Disk Colors</button>
   </div>
+
   <div class="stats">
     <span>Moves: <span id="moveCount">0</span></span> |
     <span>Time: <span id="timer">0</span>s</span>
   </div>
+
   <div id="winner"></div>
 
   <div class="game" id="game">
@@ -112,12 +138,12 @@
   <script>
     let selectedDisk = null, offsetX = 0, offsetY = 0;
     let moveCount = 0, timer = 0, timerInterval;
-    let colorSetIndex = 0;
+    let colorIndex = 0;
     const towers = [...document.querySelectorAll(".tower")];
     const colorSets = [
-      ["#f94144", "#f3722c", "#f8961e", "#f9c74f", "#90be6d", "#43aa8b"],
-      ["#577590", "#4d908e", "#277da1", "#8ecae6", "#219ebc", "#023047"],
-      ["#a29bfe", "#81ecec", "#fab1a0", "#ffeaa7", "#74b9ff", "#55efc4"]
+      ['#61dafb', '#4ade80', '#facc15', '#fb7185', '#c084fc', '#f97316'],
+      ['#f87171', '#fbbf24', '#34d399', '#60a5fa', '#a78bfa', '#f472b6'],
+      ['#fdba74', '#fcd34d', '#6ee7b7', '#93c5fd', '#ddd6fe', '#f9a8d4'],
     ];
 
     function startGame() {
@@ -129,7 +155,6 @@
       document.getElementById("moveCount").textContent = moveCount;
 
       const count = +document.getElementById("diskCount").value;
-      const screenRatio = Math.min(window.innerWidth / 500, 1); // scale for small screens
       towers.forEach(t => {
         const peg = t.querySelector(".peg");
         const base = t.querySelector(".base");
@@ -138,16 +163,19 @@
         t.appendChild(base);
       });
 
+      const screenWidth = window.innerWidth;
+      const maxDiskWidth = Math.min(screenWidth * 0.24, 100); // responsive disk width
+
       for (let i = count; i >= 1; i--) {
         const disk = document.createElement("div");
         disk.className = "disk";
         disk.dataset.size = i;
-
-        const diskWidth = (20 + i * 20) * screenRatio;
-        disk.style.width = `${diskWidth}px`;
-        disk.style.left = `calc(50% - ${diskWidth / 2}px)`;
-        disk.style.bottom = `${(count - i) * 22}px`;
-        disk.style.background = colorSets[colorSetIndex % colorSets.length][(i - 1) % 6];
+        disk.textContent = i;
+        const width = maxDiskWidth * (i / count) + 30;
+        disk.style.width = `${width}px`;
+        disk.style.left = `calc(50% - ${width / 2}px)`;
+        disk.style.bottom = `${(count - i) * 6}vh`;
+        disk.style.background = getColor(i - 1);
 
         addDragEvents(disk);
         towers[0].appendChild(disk);
@@ -159,10 +187,23 @@
       }, 1000);
     }
 
+    function getColor(index) {
+      const set = colorSets[colorIndex % colorSets.length];
+      return set[index % set.length];
+    }
+
+    function changeColor() {
+      colorIndex++;
+      [...document.querySelectorAll(".disk")].forEach((disk, i) => {
+        disk.style.background = getColor(i);
+      });
+    }
+
     function addDragEvents(disk) {
       disk.addEventListener("pointerdown", (e) => {
         const parent = disk.parentElement;
-        const topDisk = [...parent.querySelectorAll(".disk")].reduce((a, b) => +a.style.bottom.replace('px', '') > +b.style.bottom.replace('px', '') ? a : b);
+        const topDisk = [...parent.querySelectorAll(".disk")].reduce((a, b) =>
+          +a.style.bottom.replace('vh', '').replace('px', '') > +b.style.bottom.replace('vh', '').replace('px', '') ? a : b);
         if (disk !== topDisk) return;
 
         selectedDisk = disk;
@@ -191,9 +232,9 @@
           const top = [...targetTower.querySelectorAll(".disk")].reduce((a, b) => +a.dataset.size < +b.dataset.size ? a : b, { dataset: { size: Infinity } });
           if (+selectedDisk.dataset.size < +top.dataset.size || top.dataset.size === Infinity) {
             const disks = targetTower.querySelectorAll(".disk");
-            const newBottom = disks.length * 22;
+            const newBottom = disks.length * 6;
             selectedDisk.style.position = "absolute";
-            selectedDisk.style.bottom = `${newBottom}px`;
+            selectedDisk.style.bottom = `${newBottom}vh`;
             selectedDisk.style.top = "";
             selectedDisk.style.left = `calc(50% - ${selectedDisk.offsetWidth / 2}px)`;
             targetTower.appendChild(selectedDisk);
@@ -217,7 +258,7 @@
       const parent = disk.parentElement;
       const siblings = [...parent.querySelectorAll(".disk")];
       const idx = siblings.indexOf(disk);
-      disk.style.bottom = `${idx * 22}px`;
+      disk.style.bottom = `${idx * 6}vh`;
       disk.style.left = `calc(50% - ${disk.offsetWidth / 2}px)`;
     }
 
@@ -243,11 +284,6 @@
         const val = localStorage.getItem(`hanoi_best_${i}`);
         document.getElementById("best" + i).textContent = val || "--";
       }
-    }
-
-    function changeDiskColors() {
-      colorSetIndex = (colorSetIndex + 1) % colorSets.length;
-      startGame();
     }
 
     document.getElementById("diskCount").addEventListener("change", updateBestTimes);
