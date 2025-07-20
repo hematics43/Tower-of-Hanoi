@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Hanoi Mobile</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <style>
+    body {
+      margin: 0;
+      background: #121212;
+      font-family: Arial, sans-serif;
+      color: white;
+      text-align: center;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      font-size: 1.8em;
+      margin-top: 10px;
+    }
+
+    #controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 10px;
+    }
+
+    select, button {
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      background: #2196f3;
+      color: white;
+    }
+
+    #status {
+      font-size: 1.1em;
+      padding: 10px;
+    }
+
+    #game {
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-end;
+      margin: 10px 0;
+      height: 60vh;
+    }
+
+    .tower {
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid #fff;
+      border-radius: 10px;
+      width: 28%;
+      height: 100%;
+      display: flex;
+      flex-direction: column-reverse;
+      align-items: center;
+      padding: 5px;
+      touch-action: manipulation;
+    }
+
+    .disk {
+      height: 25px;
+      margin: 5px 0;
+      border-radius: 5px;
+      color: white;
+      text-align: center;
+      font-weight: bold;
+      user-select: none;
+      cursor: grab;
+    }
+
+    .disk.disabled {
+      cursor: not-allowed;
+      opacity: 0.4;
+    }
+
+    #leaderboard {
+      font-size: 0.9em;
+      background: #222;
+      border-top: 1px solid #555;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🗼 Tower of Hanoi</h1>
+  <div id="controls">
+    <label for="diskCount">Disks:</label>
+    <select id="diskCount">
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+    </select>
+    <button onclick="resetGame()">Reset</button>
+  </div>
+
+  <div id="status">
+    Moves: <span id="moves">0</span> | Time: <span id="timer">0</span>s
+  </div>
+
+  <div id="game">
+    <div class="tower" id="tower1"></div>
+    <div class="tower" id="tower2"></div>
+    <div class="tower" id="tower3"></div>
+  </div>
+
+  <div id="leaderboard"></div>
+
+  <script>
+    let selectedDisk = null, moves = 0, time = 0, timerInterval = null, diskCount = 3;
+
+    function getColor(size) {
+      const colors = ["#f44336", "#3f51b5", "#ffc107", "#4caf50", "#9c27b0"];
+      return colors[(size - 1) % colors.length];
+    }
+
+    function createDisk(size, max) {
+      const d = document.createElement("div");
+      d.className = "disk";
+      d.setAttribute("data-size", size);
+      d.setAttribute("draggable", false);
+      d.textContent = size;
+      d.style.width = `${40 + (size / max) * 60}%`;
+      d.style.background = getColor(size);
+      return d;
+    }
+
+    function updateTops() {
+      document.querySelectorAll('.tower').forEach(tower => {
+        const disks = tower.querySelectorAll('.disk');
+        disks.forEach(d => {
+          d.classList.add('disabled');
+          d.setAttribute('draggable', false);
+        });
+
+        const top = disks[disks.length - 1];
+        if (top) {
+          top.classList.remove('disabled');
+          top.setAttribute('draggable', true);
+          top.ontouchstart = () => selectedDisk = top;
+          top.ondragstart = () => selectedDisk = top;
+        }
+      });
+    }
+
+    function resetGame() {
+      clearInterval(timerInterval);
+      selectedDisk = null;
+      moves = 0;
+      time = 0;
+      diskCount = parseInt(document.getElementById("diskCount").value);
+      document.getElementById("moves").textContent = moves;
+      document.getElementById("timer").textContent = time;
+
+      for (let i = 1; i <= 3; i++) document.getElementById("tower" + i).innerHTML = "";
+
+      const tower = document.getElementById("tower1");
+      for (let i = diskCount; i >= 1; i--) tower.appendChild(createDisk(i, diskCount));
+
+      updateTops();
+      startTimer();
+      updateLeaderboardDisplay();
+    }
+
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        time++;
+        document.getElementById("timer").textContent = time;
+      }, 1000);
+    }
+
+    document.querySelectorAll('.tower').forEach(tower => {
+      tower.addEventListener("dragover", e => e.preventDefault());
+      tower.addEventListener("drop", () => dropDisk(tower));
+      tower.addEventListener("touchend", () => dropDisk(tower));
+    });
+
+    function dropDisk(tower) {
+      if (!selectedDisk) return;
+
+      const top = tower.querySelector('.disk:last-child');
+      const selSize = +selectedDisk.dataset.size;
+      const topSize = top ? +top.dataset.size : Infinity;
+      const from = selectedDisk.parentElement;
+
+      if (tower !== from && selSize < topSize) {
+        tower.appendChild(selectedDisk);
+        moves++;
+        document.getElementById("moves").textContent = moves;
+        selectedDisk = null;
+        updateTops();
+        checkWin();
+      } else {
+        selectedDisk = null;
+      }
+    }
+
+    function checkWin() {
+      const tower3 = document.getElementById("tower3");
+      if (tower3.childElementCount === diskCount) {
+        clearInterval(timerInterval);
+        setTimeout(() => alert(`🎉 Solved in ${moves} moves and ${time}s!`), 300);
+        saveBestTime();
+      }
+    }
+
+    function saveBestTime() {
+      const key = "hanoi_best_" + diskCount;
+      const best = localStorage.getItem(key);
+      if (!best || time < parseInt(best)) localStorage.setItem(key, time);
+      updateLeaderboardDisplay();
+    }
+
+    function updateLeaderboardDisplay() {
+      let html = "<strong>🏆 Best Times</strong><br>";
+      for (let i = 3; i <= 5; i++) {
+        const best = localStorage.getItem("hanoi_best_" + i);
+        html += `${i} disks: ${best ? best + "s" : "—"}<br>`;
+      }
+      document.getElementById("leaderboard").innerHTML = html;
+    }
+
+    resetGame();
+  </script>
+</body>
+</html>
