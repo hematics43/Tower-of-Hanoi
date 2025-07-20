@@ -1,273 +1,255 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Tower of Hanoi</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
-      background: #1e1e1e;
-      color: white;
-      font-family: Arial, sans-serif;
-      text-align: center;
       margin: 0;
-      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #1e1e2f;
+      color: white;
+      text-align: center;
     }
-
-    h1 { margin-bottom: 10px; }
-
-    #controls {
-      margin-bottom: 15px;
+    h1 { margin-top: 10px; }
+    .controls, .stats, .bests {
+      margin: 10px;
     }
-
     select, button {
-      padding: 8px 14px;
+      padding: 6px 12px;
       font-size: 16px;
-      margin: 5px;
-      border: none;
+    }
+    .game {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      height: 60vh;
+      margin: 20px 10px;
+      gap: 20px;
+      touch-action: none;
+    }
+    .tower {
+      background: #444;
+      width: 120px;
+      height: 100%;
+      position: relative;
+      border-radius: 10px 10px 0 0;
+    }
+    .peg {
+      position: absolute;
+      bottom: 10px;
+      width: 10px;
+      height: 85%;
+      background: #ccc;
+      left: 50%;
+      transform: translateX(-50%);
       border-radius: 5px;
     }
-
-    #game {
-      display: flex;
-      justify-content: space-around;
-      align-items: flex-end;
-      margin-top: 20px;
-      flex-wrap: wrap;
+    .base {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 10px;
+      background: #666;
+      border-radius: 0 0 10px 10px;
     }
-
-    .tower-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .tower {
-      width: 100px;
-      height: 280px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 2px solid white;
-      position: relative;
-      display: flex;
-      flex-direction: column-reverse;
-      align-items: center;
-      padding: 5px;
-      margin: 10px;
-      touch-action: manipulation;
-    }
-
-    .label {
-      margin-top: 8px;
-      font-size: 20px;
-      font-weight: bold;
-    }
-
     .disk {
-      height: 25px;
-      margin: 3px 0;
-      background-color: #4caf50;
-      border-radius: 4px;
+      position: absolute;
+      height: 20px;
+      background: #61dafb;
+      border-radius: 5px;
       cursor: grab;
-      color: white;
-      text-align: center;
-      user-select: none;
+      touch-action: none;
     }
-
-    .disk.disabled {
-      cursor: not-allowed;
+    .disk.dragging {
+      opacity: 0.6;
+      z-index: 10;
     }
-
-    #moves, #timer {
-      margin-top: 10px;
-      font-size: 18px;
+    #winner {
+      font-size: 1.5em;
+      color: lightgreen;
+      margin: 10px;
     }
-
-    #leaderboard {
+    .bests {
+      font-size: 15px;
       margin-top: 20px;
-      background: #2a2a2a;
-      padding: 10px;
-      border-radius: 10px;
-    }
-
-    @media (max-width: 600px) {
-      .tower {
-        width: 90px;
-        height: 200px;
-      }
-      .disk {
-        height: 20px;
-        font-size: 14px;
-      }
     }
   </style>
 </head>
 <body>
-  <h1>🗼 Tower of Hanoi</h1>
-  <div id="controls">
-    <label for="diskCount">Disks:</label>
+  <h1>🏗️ Tower of Hanoi</h1>
+  <div class="controls">
+    Disks:
     <select id="diskCount">
       <option value="3">3</option>
       <option value="4">4</option>
       <option value="5">5</option>
       <option value="6">6</option>
     </select>
-    <button onclick="resetGame()">Reset</button>
+    <button onclick="startGame()">Start Game</button>
+  </div>
+  <div class="stats">
+    <span>Moves: <span id="moveCount">0</span></span> |
+    <span>Time: <span id="timer">0</span>s</span>
+  </div>
+  <div id="winner"></div>
+
+  <div class="game" id="game">
+    <div class="tower" id="tower1">
+      <div class="peg"></div>
+      <div class="base"></div>
+    </div>
+    <div class="tower" id="tower2">
+      <div class="peg"></div>
+      <div class="base"></div>
+    </div>
+    <div class="tower" id="tower3">
+      <div class="peg"></div>
+      <div class="base"></div>
+    </div>
   </div>
 
-  <div id="moves">Moves: 0</div>
-  <div id="timer">Time: 0s</div>
-
-  <div id="game">
-    <div class="tower-container">
-      <div class="tower" id="tower1"></div>
-      <div class="label">A</div>
-    </div>
-    <div class="tower-container">
-      <div class="tower" id="tower2"></div>
-      <div class="label">B</div>
-    </div>
-    <div class="tower-container">
-      <div class="tower" id="tower3"></div>
-      <div class="label">C</div>
-    </div>
+  <div class="bests" id="bestTimes">
+    <h3>🏆 Best Times</h3>
+    <div>3 disks: <span id="best3">--</span>s</div>
+    <div>4 disks: <span id="best4">--</span>s</div>
+    <div>5 disks: <span id="best5">--</span>s</div>
+    <div>6 disks: <span id="best6">--</span>s</div>
   </div>
-
-  <div id="leaderboard"></div>
 
   <script>
-    let selectedDisk = null;
-    let moves = 0;
-    let diskCount = 3;
-    let time = 0;
-    let timerInterval = null;
+    let selectedDisk = null, offsetX = 0, offsetY = 0;
+    let moveCount = 0, timer = 0, timerInterval;
+    const towers = [...document.querySelectorAll(".tower")];
 
-    function createDisk(size, maxSize) {
-      const disk = document.createElement("div");
-      disk.className = "disk";
-      disk.setAttribute("data-size", size);
-      disk.setAttribute("draggable", false); // Initially non-draggable
-      disk.textContent = size;
-      const widthPercent = 40 + (size / maxSize) * 60;
-      disk.style.width = widthPercent + "%";
-      disk.style.background = getColor(size);
-      return disk;
-    }
-
-    function getColor(size) {
-      const colors = ["#ff4081", "#2196f3", "#ffc107", "#4caf50", "#9c27b0", "#ff5722"];
-      return colors[(size - 1) % colors.length];
-    }
-
-    function updateDraggableTops() {
-      document.querySelectorAll('.tower').forEach(tower => {
-        const disks = tower.querySelectorAll('.disk');
-        disks.forEach(d => {
-          d.classList.add('disabled');
-          d.setAttribute("draggable", false);
-        });
-
-        const topDisk = disks[disks.length - 1];
-        if (topDisk) {
-          topDisk.classList.remove('disabled');
-          topDisk.setAttribute("draggable", true);
-
-          topDisk.ontouchstart = () => selectedDisk = topDisk;
-          topDisk.ondragstart = () => selectedDisk = topDisk;
-          topDisk.onclick = () => selectedDisk = topDisk;
-        }
-      });
-    }
-
-    function resetGame() {
+    function startGame() {
       clearInterval(timerInterval);
-      selectedDisk = null;
-      moves = 0;
-      time = 0;
-      document.getElementById("moves").textContent = "Moves: 0";
-      document.getElementById("timer").textContent = "Time: 0s";
-      diskCount = parseInt(document.getElementById("diskCount").value);
+      document.getElementById("winner").textContent = "";
+      timer = 0;
+      moveCount = 0;
+      document.getElementById("timer").textContent = timer;
+      document.getElementById("moveCount").textContent = moveCount;
 
-      for (let i = 1; i <= 3; i++) {
-        document.getElementById("tower" + i).innerHTML = "";
+      const count = +document.getElementById("diskCount").value;
+      towers.forEach(t => {
+        const peg = t.querySelector(".peg");
+        const base = t.querySelector(".base");
+        t.innerHTML = '';
+        t.appendChild(peg);
+        t.appendChild(base);
+      });
+
+      for (let i = count; i >= 1; i--) {
+        const disk = document.createElement("div");
+        disk.className = "disk";
+        disk.dataset.size = i;
+        disk.style.width = `${20 + i * 20}px`;
+        disk.style.left = `calc(50% - ${10 + i * 10}px)`;
+        disk.style.bottom = `${(count - i) * 22}px`;
+        disk.style.background = `hsl(${i * 50}, 80%, 60%)`;
+
+        addDragEvents(disk);
+        towers[0].appendChild(disk);
       }
 
-      const tower1 = document.getElementById("tower1");
-      for (let i = diskCount; i >= 1; i--) {
-        tower1.appendChild(createDisk(i, diskCount));
-      }
-
-      updateDraggableTops();
-      startTimer();
-      updateLeaderboardDisplay();
-    }
-
-    function startTimer() {
       timerInterval = setInterval(() => {
-        time++;
-        document.getElementById("timer").textContent = "Time: " + time + "s";
+        timer++;
+        document.getElementById("timer").textContent = timer;
       }, 1000);
     }
 
-    document.querySelectorAll(".tower").forEach(tower => {
-      tower.addEventListener("dragover", e => e.preventDefault());
-      tower.addEventListener("drop", function () { dropDisk(this); });
-      tower.addEventListener("touchend", function () { dropDisk(this); });
-      tower.onclick = function () { dropDisk(this); };
-    });
+    function addDragEvents(disk) {
+      disk.addEventListener("pointerdown", (e) => {
+        const parent = disk.parentElement;
+        const topDisk = [...parent.querySelectorAll(".disk")].reduce((a, b) => +a.style.bottom.replace('px', '') > +b.style.bottom.replace('px', '') ? a : b);
+        if (disk !== topDisk) return;
 
-    function dropDisk(tower) {
-      if (!selectedDisk) return;
+        selectedDisk = disk;
+        disk.setPointerCapture(e.pointerId);
+        disk.classList.add("dragging");
+        offsetX = e.offsetX;
+        offsetY = e.offsetY;
+      });
 
-      const disks = tower.querySelectorAll(".disk");
-      const topDisk = disks[disks.length - 1];
-      const selectedSize = +selectedDisk.getAttribute("data-size");
-      const topSize = topDisk ? +topDisk.getAttribute("data-size") : Infinity;
+      disk.addEventListener("pointermove", (e) => {
+        if (!selectedDisk) return;
+        selectedDisk.style.left = `${e.clientX - offsetX}px`;
+        selectedDisk.style.bottom = `auto`;
+        selectedDisk.style.top = `${e.clientY - offsetY}px`;
+        selectedDisk.style.position = "fixed";
+      });
 
-      const currentTower = selectedDisk.parentElement;
+      disk.addEventListener("pointerup", (e) => {
+        if (!selectedDisk) return;
+        const targetTower = towers.find(t => {
+          const rect = t.getBoundingClientRect();
+          return e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top;
+        });
 
-      if (tower !== currentTower && selectedSize < topSize) {
-        tower.appendChild(selectedDisk);
-        moves++;
-        document.getElementById("moves").textContent = "Moves: " + moves;
+        if (targetTower) {
+          const top = [...targetTower.querySelectorAll(".disk")].reduce((a, b) => +a.dataset.size < +b.dataset.size ? a : b, { dataset: { size: Infinity } });
+          if (+selectedDisk.dataset.size < +top.dataset.size || top.dataset.size === Infinity) {
+            const disks = targetTower.querySelectorAll(".disk");
+            const newBottom = disks.length * 22;
+            selectedDisk.style.position = "absolute";
+            selectedDisk.style.bottom = `${newBottom}px`;
+            selectedDisk.style.top = "";
+            selectedDisk.style.left = `calc(50% - ${selectedDisk.offsetWidth / 2}px)`;
+            targetTower.appendChild(selectedDisk);
+            moveCount++;
+            document.getElementById("moveCount").textContent = moveCount;
+
+            checkWin();
+          } else {
+            resetDisk(selectedDisk);
+          }
+        } else {
+          resetDisk(selectedDisk);
+        }
+        selectedDisk.classList.remove("dragging");
         selectedDisk = null;
-        updateDraggableTops();
-        checkWin();
-      } else {
-        selectedDisk = null;
-      }
+      });
+    }
+
+    function resetDisk(disk) {
+      disk.style.position = "absolute";
+      disk.style.top = "";
+      const parent = disk.parentElement;
+      const siblings = [...parent.querySelectorAll(".disk")];
+      const idx = siblings.indexOf(disk);
+      disk.style.bottom = `${idx * 22}px`;
+      disk.style.left = `calc(50% - ${disk.offsetWidth / 2}px)`;
     }
 
     function checkWin() {
-      const tower3 = document.getElementById("tower3");
-      if (tower3.childElementCount === diskCount) {
-        clearInterval(timerInterval);
-        setTimeout(() => {
-          alert("🎉 You solved it in " + moves + " moves and " + time + " seconds!");
-        }, 300);
-        updateLeaderboard();
+      const total = +document.getElementById("diskCount").value;
+      for (let i = 1; i <= 2; i++) {
+        const disks = towers[i].querySelectorAll(".disk");
+        if (disks.length === total) {
+          clearInterval(timerInterval);
+          document.getElementById("winner").textContent = "🎉 You Won!";
+          const key = `hanoi_best_${total}`;
+          const best = localStorage.getItem(key);
+          if (!best || +best > timer) {
+            localStorage.setItem(key, timer);
+          }
+          updateBestTimes();
+        }
       }
     }
 
-    function updateLeaderboard() {
-      const key = "hanoi_" + diskCount;
-      const bestTime = localStorage.getItem(key);
-      if (!bestTime || time < parseInt(bestTime)) {
-        localStorage.setItem(key, time);
-      }
-      updateLeaderboardDisplay();
-    }
-
-    function updateLeaderboardDisplay() {
-      let html = "<h3>🏆 Best Times:</h3>";
+    function updateBestTimes() {
       for (let i = 3; i <= 6; i++) {
-        const best = localStorage.getItem("hanoi_" + i);
-        html += `<div>${i} disks: ${best ? best + "s" : "—"}</div>`;
+        const val = localStorage.getItem(`hanoi_best_${i}`);
+        document.getElementById("best" + i).textContent = val || "--";
       }
-      document.getElementById("leaderboard").innerHTML = html;
     }
 
-    // Init
-    resetGame();
+    document.getElementById("diskCount").addEventListener("change", updateBestTimes);
+
+    updateBestTimes();
+    startGame();
   </script>
 </body>
 </html>
