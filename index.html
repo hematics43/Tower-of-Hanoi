@@ -36,6 +36,12 @@
       flex-wrap: wrap;
     }
 
+    .tower-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
     .tower {
       width: 100px;
       height: 280px;
@@ -48,6 +54,12 @@
       padding: 5px;
       margin: 10px;
       touch-action: manipulation;
+    }
+
+    .label {
+      margin-top: 8px;
+      font-size: 20px;
+      font-weight: bold;
     }
 
     .disk {
@@ -106,9 +118,18 @@
   <div id="timer">Time: 0s</div>
 
   <div id="game">
-    <div class="tower" id="tower1"></div>
-    <div class="tower" id="tower2"></div>
-    <div class="tower" id="tower3"></div>
+    <div class="tower-container">
+      <div class="tower" id="tower1"></div>
+      <div class="label">A</div>
+    </div>
+    <div class="tower-container">
+      <div class="tower" id="tower2"></div>
+      <div class="label">B</div>
+    </div>
+    <div class="tower-container">
+      <div class="tower" id="tower3"></div>
+      <div class="label">C</div>
+    </div>
   </div>
 
   <div id="leaderboard"></div>
@@ -150,9 +171,9 @@
           topDisk.classList.remove('disabled');
           topDisk.setAttribute("draggable", true);
 
-          // Allow touch
           topDisk.ontouchstart = () => selectedDisk = topDisk;
           topDisk.ondragstart = () => selectedDisk = topDisk;
+          topDisk.onclick = () => selectedDisk = topDisk;
         }
       });
     }
@@ -189,14 +210,9 @@
 
     document.querySelectorAll(".tower").forEach(tower => {
       tower.addEventListener("dragover", e => e.preventDefault());
-
-      tower.addEventListener("drop", function () {
-        dropDisk(this);
-      });
-
-      tower.addEventListener("touchend", function () {
-        dropDisk(this);
-      });
+      tower.addEventListener("drop", function () { dropDisk(this); });
+      tower.addEventListener("touchend", function () { dropDisk(this); });
+      tower.onclick = function () { dropDisk(this); };
     });
 
     function dropDisk(tower) {
